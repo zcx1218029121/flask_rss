@@ -1,11 +1,11 @@
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Time
-from sqlalchemy.orm import sessionmaker
-from flask import Flask
-from flask import request
+from sqlalchemy.sql import func
+import os
 
 Base = declarative_base()
+engine = create_engine("sqlite:///db/rss.db?check_same_thread=False", echo=True)
 
 
 class User(Base):
@@ -32,10 +32,17 @@ class Item(Base):
     title = Column(String(255))
     # content 富文本 洗掉 js 标签
     content = Column(String(255))
+    link = Column(String(255))
     # time 更新时间
-    time = Column(Time)
+    time = Column(DateTime(timezone=True), server_default=func.now())
     # Source id 请求源
     source_id = Column(Integer)
+    # 源 name
+    source_name = Column(String(30))
+    # 源 icon
+    source_icon = Column(String(255))
+    # 源 等级
+    range = Column(Integer)
 
 
 class Source(Base):
@@ -46,6 +53,8 @@ class Source(Base):
     source_name = Column(String(30))
     # 源 icon
     source_icon = Column(String(255))
+
+    url = Column(String(255))
     # 源 等级
     range = Column(Integer)
 
@@ -54,33 +63,14 @@ class Subscribe(Base):
     __tablename__ = 'subscribe'
     user_id = Column(Integer, primary_key=True)
     source_id = Column(Integer, primary_key=True)
-    time = Column(Time)
+    time = Column(DateTime(timezone=True), server_default=func.now())
 
 
-
-
-
-def add_user(user, session):
-    session.add(user)
-    session.commit()
-    session.close()
-
-
-def query_user(user, session):
-    res = session.query(User).filter_by(name=user.id).first()
-    return res
-
-
-
-
-def login(username, pass_word, session):
-    s = session.query(User).filter_by(name=username, password=pass_word).first()
-    return s
-
-
-
-
-
-
-
-
+def init_table(force_creat=False):
+    if force_creat:
+        Base.metadata.create_all(engine)
+        return
+    if not os.path.exists("../db/rss.db"):
+        Base.metadata.create_all(engine)
+    else:
+        print("skip db creat...")
