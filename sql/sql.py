@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.sql import func
@@ -31,7 +31,7 @@ class Item(Base):
     # 指定name映射到name字段; name字段为字符串类形，
     title = Column(String(255))
     # content 富文本 洗掉 js 标签
-    content = Column(String(255))
+    content = Column(Text)
     link = Column(String(255))
     # time 更新时间
     time = Column(DateTime(timezone=True), server_default=func.now())
