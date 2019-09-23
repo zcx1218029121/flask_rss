@@ -34,7 +34,7 @@ class Item(Base):
     content = Column(Text)
     link = Column(String(255))
     # time 更新时间
-    time = Column(DateTime(timezone=True), server_default=func.now())
+    time = Column(DateTime(timezone=True), server_default=func.now(format("YYYY-MM-DD HH:MM")))
     # Source id 请求源
     source_id = Column(Integer)
     # 源 name

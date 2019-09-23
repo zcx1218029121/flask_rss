@@ -31,7 +31,7 @@ class ItemService(BaseService):
         session.close()
         return items
 
-    def get_item_paging_by_source_id(self, source_id, page_size=5, page_index=0):
+    def get_item_paging_by_source_id(self, source_id, page_size=10, page_index=0):
         """
         :param page_size:int  一页显示的条目数
         :param page_index:int  当前页码
@@ -39,7 +39,7 @@ class ItemService(BaseService):
         :return: sources[]
         """
         session = self.get_session()
-        items = session.query(Item).filter_by(source_id=source_id).limit(page_size).offset(
+        items = session.query(Item).filter_by(source_id=source_id).order_by(Item.time.desc()).limit(page_size).offset(
             (page_index - 1) * page_size)
         session.close()
         return items

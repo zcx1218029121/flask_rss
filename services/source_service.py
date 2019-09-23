@@ -36,3 +36,13 @@ class SourceService(BaseService):
             (page_index - 1) * page_size)
         session.close()
         return sources
+
+    def add_source(self, user_range, source):
+        if user_range == 0:
+            session = self.get_session()
+            session.add(source)
+            session.commit()
+            session.close()
+            return 200
+        else:
+            return -1
