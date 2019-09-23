@@ -1,4 +1,3 @@
-# jwt
 from sql.sql import Item
 import itsdangerous
 import requests
@@ -12,7 +11,10 @@ from services.source_service import SourceService
 from apscheduler.schedulers.background import BackgroundScheduler
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
+import redis
 
+pool = redis.ConnectionPool(host='localhost', port=6379, db=1)
+red = redis.Redis(connection_pool=pool)
 app = Flask(__name__)
 # 盐
 salt = "simple_rss1024"
@@ -29,10 +31,15 @@ def crawler_run(source):
     soup = BeautifulSoup(r, 'html.parser')
     items_bean = []
     items = soup.findAll('item')
+
     for item in items:
-        title = item.find('title')
-        content = item.find('description')
-        link = item.find('link')
+        # 爬取链接去重
+        if red.get(item.find('guid').text) is not None:
+            return
+        red.set(item.find('guid').text, None)
+        title = item.find('title').text
+        content = item.find('description').text
+        link = item.find('guid').text
         item_bean = Item(title=title,
                          content=content,
                          link=link,
@@ -45,11 +52,8 @@ def crawler_run(source):
 
 
 def crawler():
-    executor = ThreadPoolExecutor(max_workers=3)
-    urls = []
+    executor = ThreadPoolExecutor(max_workers=2)
     sources = sourceService.source_all()
-    for source in sources:
-        urls.append(source.url)
     executor.map(crawler_run, sources)
 
 
@@ -101,7 +105,7 @@ def hot(user_dit):
                       "source_name": item.source_name,
                       "source_icon": item.source_icon
                       })
-    return {"items": items}
+    return {"items": items, "size": len(items)}
 
 
 @app.route("/me", methods=['GET'], endpoint="me")
@@ -112,25 +116,37 @@ def me(user):
 
 @app.route("/find", methods=['GET'], endpoint="find")
 @request_token
-def find():
-    items = []
-    index = int(request.args.get("index"))
-    for item in ItemService().get_item_paging(5, index):
-        items.append({"title": item.title, "content": item.content, "time": item.time, "source_id": item.source_id,
-                      "id": item.id})
-    return {"items": items, "size": len(items)}
+def find(user):
+    """
+    :param user:{} 用户jwt解密后的字典
+    """
+    pager = int(request.args.get("p"))
+    sources = []
+    for source in sourceService.source_all(user_range=user["range"], page_index=pager):
+        sources.append({"sid": source.id,
+                        "source_name": source.source_name,
+                        "source_icon": source.source_icon
+                        })
+    return {"items": sources, "size": len(sources)}
+
+
+@app.route("/add_subscribe", endpoint="add_subscribe", methods=["POST"])
+@request_token
+def add_subscribe(user):
+    return {"msg": "ok", "code": 200}
 
 
 def init_jwt(user):
     return jwt.dumps(
         {'nickName': user.nick_name, 'name': user.name,
-         'uid': user.id}).decode()  # python3 编码后得到 bytes, 再进行解码(指明解码的格式), 得到一个str
+         'uid': user.id, "range": user.range}).decode()  # python3 编码后得到 bytes, 再进行解码(指明解码的格式), 得到一个str
 
 
 if __name__ == '__main__':
-    init_table()
+    init_table(True)
     scheduler = BackgroundScheduler()
-    scheduler.add_job(crawler, 'interval', seconds=10000000)
-    crawler()
+    # 启动定时
+    scheduler.add_job(crawler, 'interval', seconds=1 * 60 * 60)
     scheduler.start()
+    crawler()
     app.run(host='0.0.0.0', port=9091, debug=True)
