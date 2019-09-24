@@ -28,6 +28,7 @@ class SubscribeService(BaseService):
 
     def del_source(self, user_id, source_id):
         session = self.get_session()
-        session.delete(Subscribe(user_id=user_id, source_id=source_id))
+        s = session.query(Subscribe).filter_by(user_id=user_id, source_id=source_id).first()
+        session.delete(s)
         session.commit()
         session.close()

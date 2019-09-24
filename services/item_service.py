@@ -26,7 +26,7 @@ class ItemService(BaseService):
         :return: sources[]
         """
         session = self.get_session()
-        items = session.query(Item).filter(Item.source_id.in_(source_ids)).limit(page_size).offset(
+        items = session.query(Item).filter(Item.source_id.in_(source_ids)).order_by(Item.time.desc()).limit(page_size).offset(
             (page_index - 1) * page_size)
         session.close()
         return items

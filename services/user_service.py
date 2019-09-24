@@ -19,3 +19,20 @@ class UserService(BaseService):
         user = session.query(User).filter_by(id=uid).first()
         session.close()
         return user
+
+    def update_user_by_id(self, uid, nick_name, pass_word, icon):
+        session = self.get_session()
+        user = session.query(User).filter_by(id=uid).update(
+            {User.nick_name: nick_name, User.password: pass_word, User.head_icon: icon})
+        session.commit()
+        session.close()
+        return user
+
+    def registered(self, name, nick_name, pass_word, icon):
+        session = self.get_session()
+        user = session.query(User).filter_by(name=name).first()
+        if user is not None:
+            return
+        session.add(User(name=name, nick_name=nick_name, password=pass_word, head_icon=icon))
+        session.commit()
+        session.close()

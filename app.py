@@ -38,6 +38,7 @@ def crawler_run(source):
 
     for item in items:
         # 爬取链接去重
+        print(item)
         if red.get(item.find('guid').text) is not None:
             return
 
@@ -235,6 +236,48 @@ def source_detail():
     return {"msg": "ok", "items": items}, 200
 
 
+@app.route("/update_user", endpoint="update_user", methods=["POST"])
+@request_token
+def update_user(user):
+    """
+    添加订阅源
+    :param user: {} jwt解码后的字典
+    :return:
+    """
+    form = request.form
+    pass_word = form["password"]
+    nick_name = form["nickName"]
+    icon = form["icon"]
+    user_id = user["uid"]
+    try:
+        userService.update_user_by_id(uid=user_id, nick_name=nick_name, pass_word=pass_word, icon=icon)
+        return {"msg": "ok", "code": 200}
+    except Exception as e:
+        print(e)
+        return {"msg": "插入失败", "code": 500}
+
+
+@app.route("/registered", endpoint="registered", methods=["POST"])
+@request_token
+def registered(user):
+    """
+    添加订阅源
+    :param user: {} jwt解码后的字典
+    :return:
+    """
+    form = request.form
+    pass_word = form["password"]
+    nick_name = form["nickName"]
+    icon = form["icon"]
+    username = user["name"]
+    try:
+        userService.registered(name=username, nick_name=nick_name, pass_word=pass_word, icon=icon)
+        return {"msg": "ok", "code": 200}
+    except Exception as e:
+        print(e)
+        return {"msg": "插入失败", "code": 500}
+
+
 def init_jwt(user):
     return jwt.dumps(
         {'nickName': user.nick_name, 'name': user.name,
@@ -242,7 +285,7 @@ def init_jwt(user):
 
 
 if __name__ == '__main__':
-    init_table(True)
+    init_table()
 
     scheduler = BackgroundScheduler()
     # 启动定时
