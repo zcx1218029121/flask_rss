@@ -31,6 +31,10 @@ sourceService = SourceService()
 
 
 def crawler_run(source):
+    """
+    :param source:Source 要爬取的source
+    :return:
+    """
     r = requests.get(source.url).text
     soup = BeautifulSoup(r, 'html.parser')
     items_bean = []
@@ -38,10 +42,16 @@ def crawler_run(source):
 
     for item in items:
         # 爬取链接去重
-        print(item)
+        if item.find('guid').text is None:
+            if red.get(item.find('title').text) is not None:
+                return
+            else:
+                red.set(item.find('title').text, "1")
         if red.get(item.find('guid').text) is not None:
             return
-
+        else:
+            if item.find('guid').text is not None:
+                red.set(item.find('guid').text, "1")
         title = item.find('title').text
         content = item.find('description').text
         link = item.find('guid').text
@@ -58,6 +68,10 @@ def crawler_run(source):
 
 
 def crawler():
+    """
+    启动多线程爬取
+    :return:
+    """
     executor = ThreadPoolExecutor(max_workers=2)
     sources = sourceService.source_all()
     executor.map(crawler_run, sources)

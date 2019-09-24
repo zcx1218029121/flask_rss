@@ -33,6 +33,8 @@ class UserService(BaseService):
         user = session.query(User).filter_by(name=name).first()
         if user is not None:
             return
-        session.add(User(name=name, nick_name=nick_name, password=pass_word, head_icon=icon))
+        # 登注册的用户默认权限为 2 级别
+        # 1 级别为 r18
+        session.add(User(name=name, nick_name=nick_name, password=pass_word, head_icon=icon, range=2))
         session.commit()
         session.close()
